@@ -111,7 +111,7 @@ def get_users(client):
 
 def save_users(users, now):
     export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now])
-    os.makedirs(export_path)
+    os.makedirs(export_path, exist_ok=True)
 
     logger.info("Save Users")
     logger.debug("users export path : " + export_path)
