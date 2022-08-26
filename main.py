@@ -23,15 +23,16 @@ def main():
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     client = init_webclient()
     users = get_users(client)
-    channel_dict = create_accessible_channel_dict(client, users)
+    channels = get_accessible_channels(client, users)
 
     save_users(users, now)
+    save_channels(channels, now)
 
-    for channel_id in channel_dict:
-        messages = get_messages(client, channel_id)
+    for channel in channels:
+        messages = get_messages(client, channel["id"])
         messages = sort_messages(messages)
-        export_messages(messages, channel_id, channel_dict[channel_id], now)
-        save_files(messages, channel_id, channel_dict[channel_id], now)
+        export_messages(messages, channel["id"], channel["name"], now)
+        save_files(messages, channel["id"], channel["name"], now)
 
     logger.info("---- End Slack Data Export ----")
 
@@ -51,10 +52,9 @@ def init_webclient():
     return client
 
 
-def create_accessible_channel_dict(client, users):
-    # The "(channel) id" and "(channel or user) name" pairs.
-    channel_dict = {}
+def get_accessible_channels(client, users):
     channels = []
+    channels_raw = []
     cursor = None
 
     try:
@@ -66,7 +66,7 @@ def create_accessible_channel_dict(client, users):
                 limit=200)
             # logger.debug(conversations_list)
 
-            channels.extend(conversations_list["channels"])
+            channels_raw.extend(conversations_list["channels"])
             sleep(Const.ACCESS_WAIT)
 
             cursor = fetch_next_cursor(conversations_list)
@@ -75,22 +75,23 @@ def create_accessible_channel_dict(client, users):
             else:
                 logger.debug("  next cursor: " + cursor)
 
-        for channel in channels:
-            if channel["is_im"]:
-                # In the case a im (Direct Messages), takes "real_name" from
-                # "users" since dose not exist in "channel".
-                channel_dict[channel["id"]] = [
-                    x for x in users if x["id"] == channel["user"]
-                ][0]["real_name"]
-            else:
-                channel_dict[channel["id"]] = channel["name"]
-        logger.debug(channel_dict)
+        # In the case a im (Direct Messages), "name" dose't exist in "channel",
+        # so takes and appends "real_name" from users_list as "name".
+        # And append "@" to the beginning of "name" in the case a im, to
+        # distinguish from channel names.
+        channels = [{
+            **x,
+            **{
+                "name":
+                "@" + [y for y in users if y["id"] == x["user"]][0]["real_name"]
+            }
+        } if x["is_im"] else x for x in channels_raw]
 
     except SlackApiError as e:
         logger.error(e)
         sleep(Const.ACCESS_WAIT)
 
-    return channel_dict
+    return channels
 
 
 def get_users(client):
@@ -119,6 +120,20 @@ def save_users(users, now):
     file_path = os.path.join(*[export_path, "users.json"])
     with open(file_path, mode="wt", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
+
+    return None
+
+
+def save_channels(channels, now):
+    export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now])
+    os.makedirs(export_path, exist_ok=True)
+
+    logger.info("Save Channels")
+    logger.debug("channels export path : " + export_path)
+
+    file_path = os.path.join(*[export_path, "channels.json"])
+    with open(file_path, mode="wt", encoding="utf-8") as f:
+        json.dump(channels, f, ensure_ascii=False, indent=2)
 
     return None
 
