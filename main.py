@@ -22,7 +22,10 @@ def main():
 
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     client = init_webclient()
-    channel_dict = create_accessible_channel_dict(client)
+    users = get_users(client)
+    channel_dict = create_accessible_channel_dict(client, users)
+
+    save_users(users, now)
 
     for channel_id in channel_dict:
         messages = get_messages(client, channel_id)
@@ -48,17 +51,13 @@ def init_webclient():
     return client
 
 
-def create_accessible_channel_dict(client):
+def create_accessible_channel_dict(client, users):
     # The "(channel) id" and "(channel or user) name" pairs.
     channel_dict = {}
     channels = []
     cursor = None
 
     try:
-        logger.debug("Call users_list (Slack API)")
-        users_list = client.users_list()
-        sleep(Const.ACCESS_WAIT)
-
         while True:
             logger.debug("Call conversations_list (Slack API)")
             conversations_list = client.conversations_list(
@@ -79,10 +78,9 @@ def create_accessible_channel_dict(client):
         for channel in channels:
             if channel["is_im"]:
                 # In the case a im (Direct Messages), takes "real_name" from
-                # "users_list" since dose not exist in "channel".
+                # "users" since dose not exist in "channel".
                 channel_dict[channel["id"]] = [
-                    x for x in users_list["members"]
-                    if x["id"] == channel["user"]
+                    x for x in users if x["id"] == channel["user"]
                 ][0]["real_name"]
             else:
                 channel_dict[channel["id"]] = channel["name"]
@@ -93,6 +91,36 @@ def create_accessible_channel_dict(client):
         sleep(Const.ACCESS_WAIT)
 
     return channel_dict
+
+
+def get_users(client):
+    users = []
+
+    try:
+        logger.debug("Call users_list (Slack API)")
+        users = client.users_list()["members"]
+        # logger.debug(users)
+        sleep(Const.ACCESS_WAIT)
+
+    except SlackApiError as e:
+        logger.error(e)
+        sleep(Const.ACCESS_WAIT)
+
+    return users
+
+
+def save_users(users, now):
+    export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now])
+    os.makedirs(export_path)
+
+    logger.info("Save Users")
+    logger.debug("users export path : " + export_path)
+
+    file_path = os.path.join(*[export_path, "users.json"])
+    with open(file_path, mode="wt", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+    return None
 
 
 def get_messages(client, channel_id):
