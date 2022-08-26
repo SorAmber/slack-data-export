@@ -232,11 +232,32 @@ def export_messages(messages, channel_id, channel_name, now):
     logger.info("Save Messages of " + channel_id)
     logger.debug("messages export path : " + export_path)
 
-    file_path = os.path.join(*[export_path, "messages.json"])
-    with open(file_path, mode="wt", encoding="utf-8") as f:
-        json.dump(messages, f, ensure_ascii=False, indent=2)
+    if Const.IS_SIMILAR_TO_OFFICIAL_FORMAT:
+        # Get a list of timestamps (Format YY-MM-DD) by excluding duplicate
+        # timestamps in messages.
+        for day_ts in {
+                format_ts(x["ts"]): format_ts(x["ts"])
+                for x in messages
+        }.values():
+            # Extract messages of "day_ts".
+            day_messages = [
+                x for x in messages if format_ts(x["ts"]) == day_ts
+            ]
+
+            file_path = os.path.join(
+                *[export_path, "".join([day_ts, ".json"])])
+            with open(file_path, mode="at", encoding="utf-8") as f:
+                json.dump(day_messages, f, ensure_ascii=False, indent=2)
+    else:
+        file_path = os.path.join(*[export_path, "messages.json"])
+        with open(file_path, mode="wt", encoding="utf-8") as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
 
     return None
+
+
+def format_ts(unix_time_str):
+    return datetime.fromtimestamp(float(unix_time_str)).strftime("%Y-%m-%d")
 
 
 if __name__ == "__main__":
