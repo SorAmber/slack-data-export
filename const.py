@@ -27,6 +27,7 @@ class Const(metaclass=ConstMeta):
     REQUESTS_READ_TIMEOUT = 60
     # Whether or not to use the User Token.
     USE_USER_TOKEN = True
-    # DEV: Whether or not to export messages in a format similar to official
+    # Whether or not.to split message files by day.
+    # If split, message files are saved in a format similar to official
     # functions.
-    IS_SIMILAR_TO_OFFICIAL_FORMAT = True
+    SPLIT_MESSAGE_FILES = True

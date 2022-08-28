@@ -274,7 +274,7 @@ def export_messages(messages, channel_id, channel_name, now):
     logger.info("Save Messages of " + channel_id)
     logger.debug("messages export path : " + export_path)
 
-    if Const.IS_SIMILAR_TO_OFFICIAL_FORMAT:
+    if Const.SPLIT_MESSAGE_FILES:
         # Get a list of timestamps (Format YY-MM-DD) by excluding duplicate
         # timestamps in messages.
         for day_ts in {
