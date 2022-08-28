@@ -31,6 +31,7 @@ Slack app:
 USER_TOKEN = "xoxp-xxxxxx"  # Your User Token
 BOT_TOKEN = "xoxb-xxxxxx"  # Your Bot Token
 ```
+
 ![the tokens](./docs/images/slack-app-tokens.jpg)
 
 Run main.py:
@@ -39,7 +40,7 @@ Run main.py:
 $ python main.py
 ```
 
-Export messages and files in `EXPORT_BASE_PATH` for each conversation.
+Export messages and files in `EXPORT_BASE_PATH` as a zip file.
 
 ### Configuring
 
@@ -53,6 +54,7 @@ List of configuration values in const.py:
 | REQUESTS_CONNECT_TIMEOUT | float    | Connect timeout (sec) for the requests module.      |
 | REQUESTS_READ_TIMEOUT    | float    | Read timeout (sec) for the requests module.         |
 | USE_USER_TOKEN           | boolean  | Whether or not to use the User Token.               |
+| SPLIT_MESSAGE_FILES      | boolean  | Whether or not to split message files by day.       |
 
 If change `ACCESS_WAIT`, check
 [the rate limits](https://api.slack.com/docs/rate-limits) of Slack APIs.
