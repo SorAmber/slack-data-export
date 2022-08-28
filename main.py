@@ -32,8 +32,8 @@ def main():
     for channel in channels:
         messages = get_messages(client, channel["id"])
         messages = sort_messages(messages)
-        export_messages(messages, channel["id"], channel["name"], now)
-        save_files(messages, channel["id"], channel["name"], now)
+        save_messages(messages, channel["name"], now)
+        save_files(messages, channel["name"], now)
 
     archive_data(now)
 
@@ -53,6 +53,22 @@ def init_webclient():
         client = WebClient(token=Const.BOT_TOKEN)
 
     return client
+
+
+def get_users(client):
+    users = []
+
+    try:
+        logger.debug("Call users_list (Slack API)")
+        users = client.users_list()["members"]
+        # logger.debug(users)
+        sleep(Const.ACCESS_WAIT)
+
+    except SlackApiError as e:
+        logger.error(e)
+        sleep(Const.ACCESS_WAIT)
+
+    return users
 
 
 def get_accessible_channels(client, users):
@@ -95,22 +111,6 @@ def get_accessible_channels(client, users):
         sleep(Const.ACCESS_WAIT)
 
     return channels
-
-
-def get_users(client):
-    users = []
-
-    try:
-        logger.debug("Call users_list (Slack API)")
-        users = client.users_list()["members"]
-        # logger.debug(users)
-        sleep(Const.ACCESS_WAIT)
-
-    except SlackApiError as e:
-        logger.error(e)
-        sleep(Const.ACCESS_WAIT)
-
-    return users
 
 
 def save_users(users, now):
@@ -211,12 +211,52 @@ def fetch_next_cursor(api_response):
         return None
 
 
-def save_files(messages, channel_id, channel_name, now):
+def sort_messages(org_messages):
+    sort_messages = sorted(org_messages, key=lambda x: x["ts"])
+    return sort_messages
+
+
+def save_messages(messages, channel_name, now):
+    export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now, channel_name])
+    os.makedirs(export_path)
+
+    logger.info("Save Messages of " + channel_name)
+    logger.debug("messages export path : " + export_path)
+
+    if Const.SPLIT_MESSAGE_FILES:
+        # Get a list of timestamps (Format YY-MM-DD) by excluding duplicate
+        # timestamps in messages.
+        for day_ts in {
+                format_ts(x["ts"]): format_ts(x["ts"])
+                for x in messages
+        }.values():
+            # Extract messages of "day_ts".
+            day_messages = [
+                x for x in messages if format_ts(x["ts"]) == day_ts
+            ]
+
+            file_path = os.path.join(
+                *[export_path, "".join([day_ts, ".json"])])
+            with open(file_path, mode="at", encoding="utf-8") as f:
+                json.dump(day_messages, f, ensure_ascii=False, indent=2)
+    else:
+        file_path = os.path.join(*[export_path, "messages.json"])
+        with open(file_path, mode="wt", encoding="utf-8") as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+
+    return None
+
+
+def format_ts(unix_time_str):
+    return datetime.fromtimestamp(float(unix_time_str)).strftime("%Y-%m-%d")
+
+
+def save_files(messages, channel_name, now):
     export_path = os.path.join(
         *[Const.EXPORT_BASE_PATH, now, channel_name, "files"])
     os.makedirs(export_path)
 
-    logger.info("Save Files of " + channel_id)
+    logger.info("Save Files of " + channel_name)
     logger.debug("files export path : " + export_path)
 
     for files in (x["files"] for x in messages if "files" in x):
@@ -262,48 +302,11 @@ def save_files(messages, channel_id, channel_name, now):
     return None
 
 
-def sort_messages(org_messages):
-    sort_messages = sorted(org_messages, key=lambda x: x["ts"])
-    return sort_messages
-
-
-def export_messages(messages, channel_id, channel_name, now):
-    export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now, channel_name])
-    os.makedirs(export_path)
-
-    logger.info("Save Messages of " + channel_id)
-    logger.debug("messages export path : " + export_path)
-
-    if Const.SPLIT_MESSAGE_FILES:
-        # Get a list of timestamps (Format YY-MM-DD) by excluding duplicate
-        # timestamps in messages.
-        for day_ts in {
-                format_ts(x["ts"]): format_ts(x["ts"])
-                for x in messages
-        }.values():
-            # Extract messages of "day_ts".
-            day_messages = [
-                x for x in messages if format_ts(x["ts"]) == day_ts
-            ]
-
-            file_path = os.path.join(
-                *[export_path, "".join([day_ts, ".json"])])
-            with open(file_path, mode="at", encoding="utf-8") as f:
-                json.dump(day_messages, f, ensure_ascii=False, indent=2)
-    else:
-        file_path = os.path.join(*[export_path, "messages.json"])
-        with open(file_path, mode="wt", encoding="utf-8") as f:
-            json.dump(messages, f, ensure_ascii=False, indent=2)
-
-    return None
-
-
-def format_ts(unix_time_str):
-    return datetime.fromtimestamp(float(unix_time_str)).strftime("%Y-%m-%d")
-
-
 def archive_data(now):
     root_path = os.path.join(*[Const.EXPORT_BASE_PATH, now])
+
+    logger.info("Archive data")
+
     shutil.make_archive(root_path, format='zip', root_dir=root_path)
     shutil.rmtree(root_path)
 
