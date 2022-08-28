@@ -5,7 +5,7 @@ messages and group messages, and downloads files exchanged in those at Slack.
 
 ## Requirements
 
-- Python 3.x
+- Python 3.2+
 - Slack App's Token
   - https://api.slack.com/apps
 
