@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import shutil
 from datetime import datetime
 from logging import basicConfig, getLogger
 from time import sleep
@@ -33,6 +34,8 @@ def main():
         messages = sort_messages(messages)
         export_messages(messages, channel["id"], channel["name"], now)
         save_files(messages, channel["id"], channel["name"], now)
+
+    archive_data(now)
 
     logger.info("---- End Slack Data Export ----")
 
@@ -209,10 +212,8 @@ def fetch_next_cursor(api_response):
 
 
 def save_files(messages, channel_id, channel_name, now):
-    export_path = os.path.join(*[
-        Const.EXPORT_BASE_PATH, now, "".join([channel_id, "_", channel_name]),
-        "files"
-    ])
+    export_path = os.path.join(
+        *[Const.EXPORT_BASE_PATH, now, channel_name, "files"])
     os.makedirs(export_path)
 
     logger.info("Save Files of " + channel_id)
@@ -267,9 +268,7 @@ def sort_messages(org_messages):
 
 
 def export_messages(messages, channel_id, channel_name, now):
-    export_path = os.path.join(*[
-        Const.EXPORT_BASE_PATH, now, "".join([channel_id, "_", channel_name])
-    ])
+    export_path = os.path.join(*[Const.EXPORT_BASE_PATH, now, channel_name])
     os.makedirs(export_path)
 
     logger.info("Save Messages of " + channel_id)
@@ -301,6 +300,14 @@ def export_messages(messages, channel_id, channel_name, now):
 
 def format_ts(unix_time_str):
     return datetime.fromtimestamp(float(unix_time_str)).strftime("%Y-%m-%d")
+
+
+def archive_data(now):
+    root_path = os.path.join(*[Const.EXPORT_BASE_PATH, now])
+    shutil.make_archive(root_path, format='zip', root_dir=root_path)
+    shutil.rmtree(root_path)
+
+    return None
 
 
 if __name__ == "__main__":
