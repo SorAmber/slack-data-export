@@ -259,6 +259,8 @@ def save_files(messages, channel_name, now):
     logger.info("Save Files of " + channel_name)
     logger.debug("files export path : " + export_path)
 
+    token = Const.USER_TOKEN if Const.USE_USER_TOKEN else Const.BOT_TOKEN
+
     for files in (x["files"] for x in messages if "files" in x):
         # Downloads files except deleted.
         for fi in (x for x in files if x["mode"] != "tombstone"):
@@ -267,7 +269,7 @@ def save_files(messages, channel_name, now):
             try:
                 response = requests.get(
                     fi["url_private"],
-                    headers={"Authorization": "Bearer " + Const.USER_TOKEN},
+                    headers={"Authorization": "Bearer " + token},
                     timeout=(Const.REQUESTS_CONNECT_TIMEOUT,
                              Const.REQUESTS_READ_TIMEOUT))
                 sleep(Const.ACCESS_WAIT)
