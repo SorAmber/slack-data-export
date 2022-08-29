@@ -66,3 +66,11 @@ List of configuration values in const.py:
 
 If change `ACCESS_WAIT`, check
 [the rate limits](https://api.slack.com/docs/rate-limits) of Slack APIs.
+
+## Cooperation
+
+By loading the exported zip file into a viewer app such as @hfaran 's [slack-export-viewer](https://github.com/hfaran/slack-export-viewer), you can view the messages.
+
+![slack-export-viewer](./docs/images/slack-export-viewer.png)
+
+Incidentally, since all conversations are displayed in the public channel column, this script appends "@" to the beginning of the user name in the case of DMs.
