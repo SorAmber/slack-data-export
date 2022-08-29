@@ -6,6 +6,7 @@ messages and group messages, and downloads files exchanged in those at Slack.
 ## Requirements
 
 - Python 3.2+
+  - "requests" and "slack-sdk" modules
 - Slack App's Token
   - https://api.slack.com/apps
 
@@ -34,7 +35,14 @@ BOT_TOKEN = "xoxb-xxxxxx"  # Your Bot Token
 
 ![the tokens](./docs/images/slack-app-tokens.jpg)
 
-Run main.py:
+Install the external package:
+
+```
+$ pip install requests
+$ pip install slack-sdk
+```
+
+And run main.py:
 
 ```
 $ python main.py
