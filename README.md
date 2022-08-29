@@ -69,7 +69,7 @@ If change `ACCESS_WAIT`, check
 
 ## Cooperation
 
-By loading the exported zip file into a viewer app such as @hfaran 's [slack-export-viewer](https://github.com/hfaran/slack-export-viewer), you can view the messages.
+By loading the exported zip file into a viewer app such as [@hfaran](https://github.com/hfaran) 's [slack-export-viewer](https://github.com/hfaran/slack-export-viewer), you can view the messages.
 
 ![slack-export-viewer](./docs/images/slack-export-viewer.png)
 
